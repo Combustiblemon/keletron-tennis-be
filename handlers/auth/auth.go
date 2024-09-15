@@ -2,26 +2,20 @@ package auth
 
 import "github.com/gin-gonic/gin"
 
-func GET() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+func Session() gin.HandlerFunc {
+	return func(_ctx *gin.Context) {
 
 	}
 }
 
-func PUT() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+func Login() gin.HandlerFunc {
+	return func(_ctx *gin.Context) {
 
 	}
 }
 
-func DELETE() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-
-	}
-}
-
-func POST() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+func Register() gin.HandlerFunc {
+	return func(_ctx *gin.Context) {
 
 	}
 }

@@ -1,19 +1,24 @@
 package main
 
 import (
-	admin_courts "combustiblemon/keletron-tennis-be/handlers/admin/courts"
-	admin_reservations "combustiblemon/keletron-tennis-be/handlers/admin/reservations"
-	admin_users "combustiblemon/keletron-tennis-be/handlers/admin/users"
+	"combustiblemon/keletron-tennis-be/database"
+	"combustiblemon/keletron-tennis-be/handlers/admin/adminCourts"
+	"combustiblemon/keletron-tennis-be/handlers/admin/adminReservations"
+	"combustiblemon/keletron-tennis-be/handlers/admin/adminUsers"
+	"combustiblemon/keletron-tennis-be/handlers/auth"
+	"combustiblemon/keletron-tennis-be/handlers/auth/providersGoogle"
 	"combustiblemon/keletron-tennis-be/handlers/courts"
 	"combustiblemon/keletron-tennis-be/handlers/reservations"
 	"combustiblemon/keletron-tennis-be/handlers/users"
 	"combustiblemon/keletron-tennis-be/middleware"
+	"log"
+
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
-const SERVER_PORT = "8080"
+const SERVER_PORT = "2000"
 
 // // album represents data about a record album.
 // type album struct {
@@ -67,18 +72,29 @@ const SERVER_PORT = "8080"
 // 	c.JSON(http.StatusNotFound, gin.H{"message": "album not found"})
 // }
 
-func main() {
-	router := gin.Default()
-	router.SetTrustedProxies(nil)
+func setupAuthGroup(router *gin.Engine) {
+	authGroup := router.Group("auth")
 
-	router.Use(middleware.Logger())
-	// router.Use(middleware.Auth())
+	{
+		authGroup.GET("/session", auth.Session())
+		authGroup.POST("/login", auth.Login())
+		authGroup.POST("/register", auth.Register())
 
+		callbackGroup := authGroup.Group("providers")
+
+		{
+			callbackGroup.GET("/google/start", providersGoogle.Start())
+			callbackGroup.GET("/google/callback", providersGoogle.Callback())
+		}
+	}
+}
+
+//revive:disable:add-constant
+func setupAuthorizedGroup(router *gin.Engine) {
 	authorized := router.Group("/")
 
 	authorized.Use(middleware.Auth())
 	{
-
 		reservationsGroup := authorized.Group("reservations")
 		{
 			reservationsGroup.GET("/", reservations.GET())
@@ -104,38 +120,64 @@ func main() {
 
 		admin.Use(middleware.Admin())
 		{
-
 			reservationsGroup := admin.Group("reservations")
 			{
-				reservationsGroup.GET("/", admin_reservations.GET())
-				reservationsGroup.POST("/", admin_reservations.POST())
-				reservationsGroup.GET("/:id", admin_reservations.GET_ID())
-				reservationsGroup.PUT("/:id", admin_reservations.PUT_ID())
-				reservationsGroup.DELETE("/:id", admin_reservations.DELETE_ID())
+				reservationsGroup.GET("/", adminReservations.GET())
+				reservationsGroup.POST("/", adminReservations.POST())
+				reservationsGroup.GET("/:id", adminReservations.GET_ID())
+				reservationsGroup.PUT("/:id", adminReservations.PUT_ID())
+				reservationsGroup.DELETE("/:id", adminReservations.DELETE_ID())
 			}
 
 			courtsGroup := admin.Group("courts")
 			{
-				courtsGroup.GET("/", admin_courts.GET())
-				courtsGroup.POST("/", admin_courts.POST())
-				courtsGroup.GET("/:id", admin_courts.GET_ID())
-				courtsGroup.PUT("/:id", admin_courts.PUT_ID())
-				courtsGroup.DELETE("/:id", admin_courts.DELETE_ID())
+				courtsGroup.GET("/", adminCourts.GET())
+				courtsGroup.POST("/", adminCourts.POST())
+				courtsGroup.GET("/:id", adminCourts.GET_ID())
+				courtsGroup.PUT("/:id", adminCourts.PUT_ID())
+				courtsGroup.DELETE("/:id", adminCourts.DELETE_ID())
 			}
 
 			usersGroup := admin.Group("users")
 			{
-				usersGroup.GET("/", admin_users.GET())
-				usersGroup.PUT("/", admin_users.PUT())
-				usersGroup.GET("/:id", admin_users.GET_ID())
-				usersGroup.POST("/:id", admin_users.POST_ID())
-				usersGroup.PUT("/:id", admin_users.PUT_ID())
-				usersGroup.DELETE("/:id", admin_users.DELETE_ID())
+				usersGroup.GET("/", adminUsers.GET())
+				usersGroup.PUT("/", adminUsers.PUT())
+				usersGroup.GET("/:id", adminUsers.GET_ID())
+				usersGroup.POST("/:id", adminUsers.POST_ID())
+				usersGroup.PUT("/:id", adminUsers.PUT_ID())
+				usersGroup.DELETE("/:id", adminUsers.DELETE_ID())
 			}
 		}
 	}
+}
+
+//revive:enable:add-constant
+
+func main() {
+	err := database.Setup()
+
+	if err != nil {
+		log.Fatalln("Error setting up database\n", err)
+	}
+
+	router := gin.Default()
+	err = router.SetTrustedProxies(nil)
+
+	if err != nil {
+		log.Fatal("error in SetTrustedProxies", err)
+	}
+
+	router.Use(middleware.Logger())
+
+	setupAuthGroup(router)
+
+	setupAuthorizedGroup(router)
 
 	router.Use(middleware.Error())
 
-	router.Run(fmt.Sprintf("localhost:%v", SERVER_PORT))
+	err = router.Run(fmt.Sprintf("localhost:%v", SERVER_PORT))
+
+	if err != nil {
+		log.Fatal("Error bringing server online", err)
+	}
 }

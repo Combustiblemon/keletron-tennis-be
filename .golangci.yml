@@ -1,0 +1,81 @@
+linters:
+  enable:
+    - revive
+    - errcheck
+  fast: true
+
+linters-settings:
+  revive:
+    severity: warning
+    ignore-generated-header: true
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: errorf
+      - name: empty-block
+      - name: unreachable-code
+      - name: redefines-builtin-id
+      - name: use-any
+      - name: empty-lines
+      - name: confusing-naming
+      - name: confusing-results
+      - name: constant-logical-expr
+      - name: enforce-slice-style
+        arguments: ["literal"]
+      - name: add-constant
+        arguments: [{ maxLitCount: "3", allowStrs: "\"\"", allowInts: "0,1,2", allowFloats: "0.0,0.,1.0,1.,2.0,2.", ignoreFuncs: "os\\.*,fmt\\.Println,make" }]
+      - name: cognitive-complexity
+        arguments: [7]
+      - name: datarace
+      - name: deep-exit
+      - name: defer
+      - name: import-alias-naming
+      - name: import-shadowing
+      - name: if-return
+      - name: time-equal
+      - name: redundant-import-alias
+      - name: range-val-address
+      - name: range-val-in-closure
+      - name: superfluous-else
+        arguments: ["preserveScope"]
+      - name: duplicated-imports
+      - name: modifies-parameter
+      - name: optimize-operands-order
+      - name: modifies-value-receiver
+      - name: string-of-int
+      - name: struct-tag
+      - name: unexported-naming
+      - name: unnecessary-stmt
+      - name: useless-break
+      - name: unconditional-recursion
+      - name: enforce-map-style
+        arguments: ["make"]
+      - name: early-return
+        arguments: ["preserveScope"]
+      - name: function-result-limit
+        arguments: [3]
+      - name: indent-error-flow
+        arguments: ["preserveScope"]
+      - name: unchecked-type-assertion
+        arguments: [{acceptIgnoredAssertionResult: true}]
+      - name: unused-parameter
+        arguments: [{ allowRegex: "^_" }]
+      - name: unused-receiver
+        arguments: [{ allowRegex: "^_" }]
+      - name: var-naming
+        arguments: [[], [], [{skipPackageNameChecks: true , upperCaseConst: true}]]
+      - name: waitgroup-by-value
