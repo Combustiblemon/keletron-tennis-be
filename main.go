@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 const SERVER_PORT = "2000"
@@ -154,7 +155,14 @@ func setupAuthorizedGroup(router *gin.Engine) {
 //revive:enable:add-constant
 
 func main() {
+	if err := godotenv.Load("secret.env", ".env"); err != nil {
+		log.Println("No .env file found")
+	}
+
 	err := database.Setup()
+
+	// nolint:errcheck
+	defer database.Teardown()
 
 	if err != nil {
 		log.Fatalln("Error setting up database\n", err)

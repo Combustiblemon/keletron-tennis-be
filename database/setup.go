@@ -1,109 +1,82 @@
 package database
 
 import (
-	"database/sql"
-	"log"
+	"context"
+	"fmt"
+	"os"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var tables = []string{
-	`CREATE TABLE IF NOT EXISTS "reservations" (
-	"_id"	TEXT NOT NULL UNIQUE,
-	"type"	TEXT NOT NULL,
-	"datetime"	TEXT NOT NULL,
-	"duration"	INTEGER NOT NULL,
-	"owner"	TEXT NOT NULL,
-	"court"	TEXT NOT NULL,
-	"status"	TEXT DEFAULT 'PENDING',
-	"paid"	TEXT DEFAULT 'FALSE',
-	"notes"	TEXT,
-	FOREIGN KEY("owner") REFERENCES "users"("_id"),
-  FOREIGN KEY("court") REFERENCES "courts"("_id"),
-	PRIMARY KEY("_id")
-);`,
+var client *mongo.Client
 
-	`CREATE TABLE IF NOT EXISTS "users" (
-	"_id"	TEXT NOT NULL UNIQUE,
-	"role"	TEXT NOT NULL DEFAULT 'USER',
-	"email"	TEXT NOT NULL,
-	"password"	TEXT,
-	"session"	TEXT UNIQUE,
-	"accountType"	TEXT DEFAULT 'PASSWORD',
-	"FCMTokens"	TEXT,
-	"resetKey"	TEXT,
-	PRIMARY KEY("_id")
-);`,
-
-	`CREATE TABLE IF NOT EXISTS "courts" (
-	"_id" TEXT NOT NULL UNIQUE,
-	"name"	TEXT NOT NULL,
-	"type"	TEXT NOT NULL,
-	"reservationStartTime"	TEXT NOT NULL DEFAULT '09:00',
-	"reservationEndTime"	TEXT NOT NULL DEFAULT '21:00',
-	"reservationDuration"	INTEGER NOT NULL DEFAULT 90,
-	PRIMARY KEY("_id")
-);`,
-
-	`CREATE TABLE IF NOT EXISTS "announcements" (
-	"_id" TEXT NOT NULL UNIQUE,
-	"body"	TEXT,
-	"title"	TEXT NOT NULL,
-	"validUntil"	TEXT NOT NULL,
-	"visible"	TEXT,
-	PRIMARY KEY("_id")
-);`,
-
-	`CREATE TABLE IF NOT EXISTS "court_reserved_times" (
-	"_id" TEXT NOT NULL UNIQUE,
-	"court"	TEXT NOT NULL,
-	"duration"	INTEGER NOT NULL,
-	"type"	TEXT NOT NULL,
-	"repeat"	TEXT NOT NULL,
-	"days"	TEXT NOT NULL,
-	"notes"	TEXT NOT NULL,
-	"daysNotApplied"	TEXT NOT NULL DEFAULT "[]",
-  FOREIGN KEY("court") REFERENCES "courts"("_id"),
-	PRIMARY KEY("_id")
-);`,
-}
-
-func setupTables(db *sql.DB) error {
-	for _, statement := range tables {
-		_, err := db.Exec(statement)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-var db *sql.DB
+//revive:next-line:var-declaration
+var DatabaseName = "dev"
 
 func Setup() error {
-	log.Println("Setting up database")
-
-	db, err := sql.Open("sqlite3", "./database.db")
-	if err != nil {
-		return err
+	bsonOpts := &options.BSONOptions{
+		UseJSONStructTags:       true,
+		NilSliceAsEmpty:         true,
+		ErrorOnInlineDuplicates: true,
+		NilMapAsEmpty:           true,
+		NilByteSliceAsEmpty:     true,
 	}
 
-	err = setupTables(db)
+	uri := os.Getenv("MONGODB_URI")
 
-	if err != nil {
-		return err
+	if uri == "" {
+		return fmt.Errorf("Set your 'MONGODB_URI' environment variable. " +
+			"See: " +
+			"www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable")
 	}
 
-	log.Println("Database setup complete")
+	_client, err := mongo.Connect(context.TODO(), options.Client().
+		ApplyURI(uri).SetBSONOptions(bsonOpts))
 
-	return nil
+	client = _client
+
+	return err
+
+	// coll := client.Database("sample_mflix").Collection("movies")
+	// title := "Back to the Future"
+
+	// var result bson.M
+	// err = coll.FindOne(context.TODO(), bson.D{{Key: "title", Value: title}}).
+	// 	Decode(&result)
+	// if err == mongo.ErrNoDocuments {
+	// 	fmt.Printf("No document was found with the title %s\n", title)
+	// 	return err
+	// }
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// jsonData, err := json.MarshalIndent(result, "", "    ")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("%s\n", jsonData)
+
+	// return err
+}
+
+func GetClient() (*mongo.Client, error) {
+	if client != nil {
+
+		return client, nil
+	}
+	err := Setup()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 func Teardown() error {
-	err := db.Close()
-	if err != nil {
-		return err
-	}
+	err := client.Disconnect(context.TODO())
 
-	return nil
+	return err
 }

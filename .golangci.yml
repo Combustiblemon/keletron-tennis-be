@@ -63,7 +63,7 @@ linters-settings:
       - name: useless-break
       - name: unconditional-recursion
       - name: enforce-map-style
-        arguments: ["make"]
+        arguments: ["literal"]
       - name: early-return
         arguments: ["preserveScope"]
       - name: function-result-limit
