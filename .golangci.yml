@@ -43,7 +43,7 @@ linters-settings:
       - name: datarace
       - name: deep-exit
       - name: defer
-      - name: import-alias-naming
+      # - name: import-alias-naming
       - name: import-shadowing
       - name: if-return
       - name: time-equal

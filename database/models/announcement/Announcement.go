@@ -1,4 +1,4 @@
-package database
+package AnnouncementModel
 
 import (
 	"combustiblemon/keletron-tennis-be/database"
