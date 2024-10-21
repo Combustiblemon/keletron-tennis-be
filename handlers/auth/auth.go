@@ -1,10 +1,18 @@
 package auth
 
-import "github.com/gin-gonic/gin"
+import (
+	"combustiblemon/keletron-tennis-be/modules/helpers"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 func Session() gin.HandlerFunc {
-	return func(_ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		fmt.Println(helpers.GetURL(ctx))
 
+		ctx.Status(http.StatusOK)
 	}
 }
 

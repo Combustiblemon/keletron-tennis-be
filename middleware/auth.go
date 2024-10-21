@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/UserModel"
+	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"fmt"
 	"net/http"
 
@@ -24,19 +25,18 @@ func Auth() gin.HandlerFunc {
 		user, err := getUser(ctx)
 
 		if err != nil {
-			fmt.Printf("Error in Auth middleware: %v", err)
-			ctx.JSON(http.StatusUnauthorized, map[string]any{})
-
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
 		if user == nil {
+			helpers.ClearAuthCookie(ctx)
 			ctx.JSON(http.StatusUnauthorized, map[string]any{})
-
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
-		ctx.Set("user", user)
+		ctx.Set("User", user)
 		ctx.Next()
 	}
 }
@@ -58,7 +58,8 @@ func Admin() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("user", user)
+		ctx.Set("User", user)
+		ctx.Set("Banana", user)
 		ctx.Next()
 	}
 }

@@ -2,7 +2,7 @@ package providersGoogle
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/UserModel"
-	helpers "combustiblemon/keletron-tennis-be/modules"
+	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -76,10 +77,7 @@ type GoogleUserData struct {
 	Picture       string
 }
 
-/*
-CallBackFromGoogle Function
-*/
-func CallBackFromGoogle(w http.ResponseWriter, r *http.Request) (*GoogleUserData, error) {
+func CallBackFromGoogle(r *http.Request) (*GoogleUserData, error) {
 	state := r.FormValue("state")
 	fmt.Println(state)
 	if state != oauthStateStringGl {
@@ -100,18 +98,14 @@ func CallBackFromGoogle(w http.ResponseWriter, r *http.Request) (*GoogleUserData
 
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(token.AccessToken))
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return nil, fmt.Errorf("Get: " + err.Error() + "\n")
 	}
 	defer resp.Body.Close()
 
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return nil, fmt.Errorf("ReadAll: " + err.Error() + "\n")
 	}
-
-	// fmt.Println("parseResponseBody: " + string(response) + "\n")
 
 	var d GoogleUserData
 	err = json.Unmarshal(response, &d)
@@ -124,41 +118,46 @@ func CallBackFromGoogle(w http.ResponseWriter, r *http.Request) (*GoogleUserData
 
 func Callback() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		data, err := CallBackFromGoogle(ctx.Writer, ctx.Request)
+		data, err := CallBackFromGoogle(ctx.Request)
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, map[string]string{
-				"error": err.Error(),
-			})
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
 		session, err := uuid.NewV7()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, map[string]string{
-				"error": err.Error(),
-			})
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
-		token, err := helpers.CreateToken(UserModel.User{
-			Name:      data.Name,
-			Role:      "USER",
-			FCMTokens: []string{},
-			Session:   session.String(),
-		})
+		usr, err := UserModel.FindOne(bson.D{{Key: "email", Value: data.Email}})
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, map[string]string{
-				"error": err.Error(),
-			})
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			return
+		}
+
+		if usr == nil {
+			usr = &UserModel.User{
+				Name:      data.Name,
+				Email:     data.Email,
+				Role:      "USER",
+				FCMTokens: []string{},
+				Session:   session.String(),
+			}
+		}
+
+		token, err := helpers.CreateToken(*usr)
+
+		if err != nil {
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
+
 			return
 		}
 
 		ctx.SetCookie("auth", token, COOKIE_MAX_AGE, "/", ctx.Request.URL.Host, true, true)
-		ctx.JSON(http.StatusOK, map[string]string{
-			"status": "ok",
-		})
+		ctx.Status(http.StatusOK)
 	}
 }

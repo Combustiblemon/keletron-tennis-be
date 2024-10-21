@@ -1,4 +1,4 @@
-package database
+package AnnouncementModel
 
 import (
 	"combustiblemon/keletron-tennis-be/database"
@@ -7,35 +7,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type ReservedTimes struct {
-	ID              primitive.ObjectID `bson:"_id"`
-	StartTime       string
-	Duration        int
-	Type            string
-	Repeat          string
-	Notes           string
-	Days            []string
-	datesNotApplied []string
+type Announcement struct {
+	ID         primitive.ObjectID `bson:"_id"`
+	Title      string
+	ValidUntil string
+	Visible    string
 }
 
-type ReservationsInfo struct {
-	ID            primitive.ObjectID `bson:"_id"`
-	StartTime     string
-	EndTime       string
-	Duration      int
-	ReservedTimes []ReservedTimes
-}
+const COLLECTION string = "announcements"
 
-type Court struct {
-	ID               primitive.ObjectID `bson:"_id"`
-	Name             string
-	Type             string
-	ReservationsInfo ReservationsInfo
-}
-
-const COLLECTION string = "courts"
-
-func FindOne(filter primitive.D) (*Court, error) {
+func FindOne(filter primitive.D) (*Announcement, error) {
 	client, err := database.GetClient()
 
 	if err != nil {
@@ -43,9 +24,10 @@ func FindOne(filter primitive.D) (*Court, error) {
 	}
 
 	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
-	var result Court
+	var result Announcement
 	err = coll.FindOne(context.TODO(), filter).
 		Decode(&result)
+
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +35,7 @@ func FindOne(filter primitive.D) (*Court, error) {
 	return &result, nil
 }
 
-func Find(filter primitive.D) (*[]Court, error) {
+func Find(filter primitive.D) (*[]Announcement, error) {
 	client, err := database.GetClient()
 
 	if err != nil {
@@ -66,7 +48,7 @@ func Find(filter primitive.D) (*[]Court, error) {
 		return nil, err
 	}
 
-	var results []Court
+	var results []Announcement
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return nil, err
 	}
@@ -74,7 +56,7 @@ func Find(filter primitive.D) (*[]Court, error) {
 	return &results, nil
 }
 
-func Create(u Court) error {
+func Create(u Announcement) error {
 	client, err := database.GetClient()
 
 	if err != nil {
@@ -86,7 +68,7 @@ func Create(u Court) error {
 
 	return err
 }
-func (c *Court) Save() error {
+func (c *Announcement) Save() error {
 	client, err := database.GetClient()
 
 	if err != nil {

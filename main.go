@@ -23,7 +23,6 @@ const SERVER_PORT = "2000"
 
 func setupAuthGroup(router *gin.Engine) {
 	authGroup := router.Group("auth")
-
 	{
 		authGroup.GET("/session", auth.Session())
 		authGroup.POST("/login", auth.Login())
@@ -56,7 +55,7 @@ func setupAuthorizedGroup(router *gin.Engine) {
 		courtsGroup := authorized.Group("courts")
 		{
 			courtsGroup.GET("/", courts.GET())
-			courtsGroup.GET("/:id", courts.GET_ID())
+			courtsGroup.GET("/:id", courts.GetID())
 		}
 
 		usersGroup := authorized.Group("users")
@@ -123,6 +122,7 @@ func main() {
 		log.Fatal("error in SetTrustedProxies", err)
 	}
 
+	router.Use(middleware.Info())
 	router.Use(middleware.Logger())
 
 	router.GET("/announcements")
