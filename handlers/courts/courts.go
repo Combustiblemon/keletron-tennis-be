@@ -1,27 +1,23 @@
 package courts
 
-import "github.com/gin-gonic/gin"
+import (
+	"combustiblemon/keletron-tennis-be/database/models/CourtModel"
+	"combustiblemon/keletron-tennis-be/modules/helpers"
+	"net/http"
 
-func GET() gin.HandlerFunc {
-	return func(_ctx *gin.Context) {
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+)
 
-	}
-}
+func Get() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		court, err := CourtModel.FindOne(bson.D{})
 
-func PUT() gin.HandlerFunc {
-	return func(_ctx *gin.Context) {
+		if err != nil {
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			return
+		}
 
-	}
-}
-
-func DELETE() gin.HandlerFunc {
-	return func(_ctx *gin.Context) {
-
-	}
-}
-
-func POST() gin.HandlerFunc {
-	return func(_ctx *gin.Context) {
-
+		ctx.JSON(http.StatusOK, court)
 	}
 }

@@ -4,7 +4,9 @@ import (
 	"combustiblemon/keletron-tennis-be/database/models/UserModel"
 	"combustiblemon/keletron-tennis-be/modules/logger"
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,20 +34,34 @@ func CreateToken(user UserModel.User) (string, error) {
 	return tokenString, nil
 }
 
-func VerifyToken(tokenString string) error {
-	token, err := jwt.Parse(tokenString, func(_token *jwt.Token) (any, error) {
+type UserClaims struct {
+	jwt.MapClaims
+	ID      string `json:"_id"`
+	Email   string `json:"email"`
+	Name    string `json:"name"`
+	Role    string `json:"role"`
+	Session string `json:"session"`
+	Expire  int    `json:"exp"`
+}
+
+func ParseToken(tokenString string) (*UserClaims, error) {
+	claims := UserClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(_token *jwt.Token) (any, error) {
 		return secretKey, nil
 	})
 
 	if err != nil {
-		return err
+		slog.Error(err.Error())
+		return nil, err
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("invalid token")
+		slog.Error("hello")
+		return nil, fmt.Errorf("invalid token")
 	}
 
-	return nil
+	return &claims, nil
 }
 
 type URL struct {
@@ -80,11 +96,23 @@ const (
 )
 
 func SetAuthCookie(ctx *gin.Context, value string) {
-	ctx.SetCookie("auth", value, COOKIE_MAX_AGE, HOME_PATH, GetURL(ctx).Host, true, true)
+	host := GetURL(ctx).Host
+
+	if strings.Contains(host, "localhost") {
+		host = ""
+	}
+
+	ctx.SetCookie("session", value, COOKIE_MAX_AGE, HOME_PATH, host, true, true)
 }
 
 func ClearAuthCookie(ctx *gin.Context) {
-	ctx.SetCookie("auth", "", COOKIE_MAX_AGE, HOME_PATH, GetURL(ctx).Host, true, true)
+	host := GetURL(ctx).Host
+
+	if strings.Contains(host, "localhost") {
+		host = ""
+	}
+
+	ctx.SetCookie("session", "", COOKIE_MAX_AGE, HOME_PATH, host, true, true)
 }
 
 func SendError(ctx *gin.Context, status int, err error) {

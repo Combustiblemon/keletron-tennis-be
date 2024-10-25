@@ -12,6 +12,7 @@ func Session() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		fmt.Println(helpers.GetURL(ctx))
 
+		helpers.SetAuthCookie(ctx, "bananana")
 		ctx.Status(http.StatusOK)
 	}
 }

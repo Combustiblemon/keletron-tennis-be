@@ -38,10 +38,10 @@ func Init() {
 	conf.ClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
 }
 
-func HandleLogin(w http.ResponseWriter, r *http.Request, oauthConf *oauth2.Config, oauthStateString string) error {
+func getLoginURL(oauthConf *oauth2.Config, oauthStateString string) (string, error) {
 	loginURL, err := url.Parse(oauthConf.Endpoint.AuthURL)
 	if err != nil {
-		return err
+		return "", err
 	}
 	parameters := url.Values{}
 	parameters.Add("client_id", oauthConf.ClientID)
@@ -51,19 +51,22 @@ func HandleLogin(w http.ResponseWriter, r *http.Request, oauthConf *oauth2.Confi
 	parameters.Add("state", oauthStateString)
 	loginURL.RawQuery = parameters.Encode()
 
-	http.Redirect(w, r, loginURL.String(), http.StatusTemporaryRedirect)
-	return nil
+	return loginURL.String(), nil
 }
 
 const oauthStateStringGl = "google_login_state"
 
 func Start() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		err := HandleLogin(ctx.Writer, ctx.Request, conf, oauthStateStringGl)
+		redirectURL, err := getLoginURL(conf, oauthStateStringGl)
 
 		if err != nil {
-			http.Redirect(ctx.Writer, ctx.Request, "/", http.StatusTemporaryRedirect)
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
 		}
+
+		ctx.JSON(http.StatusOK, map[string]string{
+			"redirectUrl": redirectURL,
+		})
 	}
 }
 
@@ -157,7 +160,7 @@ func Callback() gin.HandlerFunc {
 			return
 		}
 
-		ctx.SetCookie("auth", token, COOKIE_MAX_AGE, "/", ctx.Request.URL.Host, true, true)
+		helpers.SetAuthCookie(ctx, token)
 		ctx.Status(http.StatusOK)
 	}
 }

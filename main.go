@@ -12,9 +12,11 @@ import (
 	"combustiblemon/keletron-tennis-be/handlers/users"
 	"combustiblemon/keletron-tennis-be/middleware"
 	"log"
+	"time"
 
 	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -54,7 +56,7 @@ func setupAuthorizedGroup(router *gin.Engine) {
 
 		courtsGroup := authorized.Group("courts")
 		{
-			courtsGroup.GET("/", courts.GET())
+			courtsGroup.GET("/", courts.Get())
 			courtsGroup.GET("/:id", courts.GetID())
 		}
 
@@ -121,6 +123,18 @@ func main() {
 	if err != nil {
 		log.Fatal("error in SetTrustedProxies", err)
 	}
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:2000"},
+		AllowMethods:     []string{"POST", "OPTIONS", "GET", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "Content-Length", "X-CSRF-Token", "Token", "session", "Origin", "Host", "Connection", "Accept-Encoding", "Accept-Language", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		// AllowOriginFunc: func(origin string) bool {
+		// 	return origin == "https://github.com"
+		// },
+		MaxAge: 24 * time.Hour,
+	}))
 
 	router.Use(middleware.Info())
 	router.Use(middleware.Logger())

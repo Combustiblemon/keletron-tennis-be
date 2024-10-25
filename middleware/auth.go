@@ -14,7 +14,7 @@ func getUser(ctx *gin.Context) (*UserModel.User, error) {
 	cookie, err := ctx.Request.Cookie("session")
 
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	return UserModel.FindOne(bson.D{{Key: "session", Value: cookie}})
@@ -26,13 +26,14 @@ func Auth() gin.HandlerFunc {
 
 		if err != nil {
 			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			ctx.Abort()
 			return
 		}
 
 		if user == nil {
 			helpers.ClearAuthCookie(ctx)
-			ctx.JSON(http.StatusUnauthorized, map[string]any{})
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			helpers.SendError(ctx, http.StatusInternalServerError, fmt.Errorf("forbidden"))
+			ctx.Abort()
 			return
 		}
 
@@ -48,18 +49,17 @@ func Admin() gin.HandlerFunc {
 		if err != nil {
 			fmt.Printf("Error in Auth middleware: %v", err)
 			ctx.JSON(http.StatusUnauthorized, map[string]any{})
-
+			ctx.Abort()
 			return
 		}
 
 		if user == nil || user.Role != "ADMIN" {
-			ctx.JSON(http.StatusUnauthorized, map[string]any{})
-
+			ctx.Status(http.StatusUnauthorized)
+			ctx.Abort()
 			return
 		}
 
 		ctx.Set("User", user)
-		ctx.Set("Banana", user)
 		ctx.Next()
 	}
 }
