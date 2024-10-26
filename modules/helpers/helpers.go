@@ -34,7 +34,7 @@ func CreateToken(user UserModel.User) (string, error) {
 	return tokenString, nil
 }
 
-type UserClaims struct {
+type UserToken struct {
 	jwt.MapClaims
 	ID      string `json:"_id"`
 	Email   string `json:"email"`
@@ -44,8 +44,8 @@ type UserClaims struct {
 	Expire  int    `json:"exp"`
 }
 
-func ParseToken(tokenString string) (*UserClaims, error) {
-	claims := UserClaims{}
+func ParseToken(tokenString string) (*UserToken, error) {
+	claims := UserToken{}
 
 	token, err := jwt.ParseWithClaims(tokenString, &claims, func(_token *jwt.Token) (any, error) {
 		return secretKey, nil
@@ -57,7 +57,6 @@ func ParseToken(tokenString string) (*UserClaims, error) {
 	}
 
 	if !token.Valid {
-		slog.Error("hello")
 		return nil, fmt.Errorf("invalid token")
 	}
 
@@ -121,4 +120,18 @@ func SendError(ctx *gin.Context, status int, err error) {
 	ctx.JSON(status, map[string]string{
 		"error": err.Error(),
 	})
+}
+
+func GetUser(ctx *gin.Context) *UserModel.User {
+	userData, exists := ctx.Get("user")
+
+	if exists {
+		user, ok := userData.(UserModel.User)
+
+		if ok {
+			return &user
+		}
+	}
+
+	return nil
 }

@@ -9,7 +9,7 @@ import (
 	"combustiblemon/keletron-tennis-be/handlers/auth/providersGoogle"
 	"combustiblemon/keletron-tennis-be/handlers/courts"
 	"combustiblemon/keletron-tennis-be/handlers/reservations"
-	"combustiblemon/keletron-tennis-be/handlers/users"
+	"combustiblemon/keletron-tennis-be/handlers/user"
 	"combustiblemon/keletron-tennis-be/middleware"
 	"log"
 	"time"
@@ -49,21 +49,20 @@ func setupAuthorizedGroup(router *gin.Engine) {
 		{
 			reservationsGroup.GET("/", reservations.GET())
 			reservationsGroup.POST("/", reservations.POST())
-			reservationsGroup.GET("/:id", reservations.GET_ID())
-			reservationsGroup.PUT("/:id", reservations.PUT_ID())
-			reservationsGroup.DELETE("/:id", reservations.DELETE_ID())
+			reservationsGroup.GET("/:id", reservations.GetOne())
+			reservationsGroup.PUT("/:id", reservations.PutOne())
+			reservationsGroup.DELETE("/:id", reservations.DeleteOne())
 		}
 
 		courtsGroup := authorized.Group("courts")
 		{
-			courtsGroup.GET("/", courts.Get())
-			courtsGroup.GET("/:id", courts.GetID())
+			courtsGroup.GET("/", courts.GetMany())
+			courtsGroup.GET("/:id", courts.GetOne())
 		}
 
-		usersGroup := authorized.Group("users")
+		usersGroup := authorized.Group("user")
 		{
-			usersGroup.GET("/", users.GET())
-			usersGroup.PUT("/", users.PUT())
+			usersGroup.GET("/", user.GetOne())
 		}
 
 		admin := authorized.Group("admin")

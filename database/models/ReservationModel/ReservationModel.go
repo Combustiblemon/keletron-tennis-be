@@ -11,6 +11,7 @@ import (
 
 type ReservationType interface {
 	Sanitize() ReservationSanitized
+	SanitizeOwner() ReservationSanitizedOwner
 }
 
 type ReservationSanitized struct {
@@ -21,13 +22,24 @@ type ReservationSanitized struct {
 	Type     string
 }
 
+type ReservationSanitizedOwner struct {
+	ID       primitive.ObjectID `bson:"_id"`
+	Court    string
+	Datetime string
+	Duration int
+	Type     string
+	Notes    string
+	People   []string
+	Status   string
+}
+
 type Reservation struct {
 	ID       primitive.ObjectID `bson:"_id"`
 	Court    string
 	Datetime string
 	Duration int
 	Type     string
-	Owner    string
+	Owner    primitive.ObjectID
 	Status   string
 	Paid     bool
 	Notes    string
@@ -40,6 +52,19 @@ func (r *Reservation) Sanitize() ReservationSanitized {
 		Datetime: r.Datetime,
 		Duration: r.Duration,
 		Type:     r.Type,
+	}
+}
+
+func (r *Reservation) SanitizeOwner() ReservationSanitizedOwner {
+	return ReservationSanitizedOwner{
+		ID:       r.ID,
+		Court:    r.Court,
+		Datetime: r.Datetime,
+		Duration: r.Duration,
+		Type:     r.Type,
+		Notes:    r.Notes,
+		People:   r.People,
+		Status:   r.Status,
 	}
 }
 

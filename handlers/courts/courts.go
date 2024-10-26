@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Get() gin.HandlerFunc {
+func GetMany() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		court, err := CourtModel.FindOne(bson.D{})
 

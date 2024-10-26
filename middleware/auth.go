@@ -11,13 +11,19 @@ import (
 )
 
 func getUser(ctx *gin.Context) (*UserModel.User, error) {
-	cookie, err := ctx.Request.Cookie("session")
+	token, err := ctx.Request.Cookie("session")
 
 	if err != nil {
 		return nil, err
 	}
 
-	return UserModel.FindOne(bson.D{{Key: "session", Value: cookie}})
+	userData, err := helpers.ParseToken(token.Value)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return UserModel.FindOne(bson.D{{Key: "session", Value: userData.Session}})
 }
 
 func Auth() gin.HandlerFunc {
@@ -32,12 +38,12 @@ func Auth() gin.HandlerFunc {
 
 		if user == nil {
 			helpers.ClearAuthCookie(ctx)
-			helpers.SendError(ctx, http.StatusInternalServerError, fmt.Errorf("forbidden"))
+			helpers.SendError(ctx, http.StatusUnauthorized, fmt.Errorf("forbidden"))
 			ctx.Abort()
 			return
 		}
 
-		ctx.Set("User", user)
+		ctx.Set("user", user)
 		ctx.Next()
 	}
 }
@@ -48,7 +54,7 @@ func Admin() gin.HandlerFunc {
 
 		if err != nil {
 			fmt.Printf("Error in Auth middleware: %v", err)
-			ctx.JSON(http.StatusUnauthorized, map[string]any{})
+			ctx.Status(http.StatusInternalServerError)
 			ctx.Abort()
 			return
 		}
@@ -59,7 +65,7 @@ func Admin() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("User", user)
+		ctx.Set("user", user)
 		ctx.Next()
 	}
 }

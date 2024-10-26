@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func GetID() gin.HandlerFunc {
+func GetOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		_id := ctx.Query(("id"))
 

@@ -11,7 +11,7 @@ func Error() gin.HandlerFunc {
 		if len(ctx.Errors) > 0 {
 			info, _ := ctx.Get("info")
 
-			slog.Error("Errors detected in request %v", info)
+			slog.Error("Errors detected in request %v", info, ctx.Errors)
 		}
 
 		ctx.Next()
