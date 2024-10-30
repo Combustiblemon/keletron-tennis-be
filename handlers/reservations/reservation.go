@@ -29,7 +29,6 @@ func GetOne() gin.HandlerFunc {
 		user := helpers.GetUser(ctx)
 
 		if user != nil && reservation.Owner.String() == user.ID.String() {
-
 			ctx.JSON(http.StatusOK, reservation.SanitizeOwner())
 		}
 
@@ -37,13 +36,38 @@ func GetOne() gin.HandlerFunc {
 	}
 }
 
-func PutOne() gin.HandlerFunc {
+func DeleteOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		_id := ctx.Query(("id"))
 
+		if _id == "" {
+			helpers.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))
+			return
+		}
+
+		reservation, err := ReservationModel.FindOne(bson.D{{Key: "_id", Value: _id}})
+
+		if err != nil {
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			return
+		}
+
+		user := helpers.GetUser(ctx)
+
+		if user != nil && reservation.Owner.String() != user.ID.String() {
+			ctx.Status(http.StatusUnauthorized)
+			return
+		}
+
+		err = reservation.Delete()
+
+		if err != nil {
+			helpers.SendError(ctx, http.StatusInternalServerError, err)
+		}
 	}
 }
 
-func DeleteOne() gin.HandlerFunc {
+func PutOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 	}

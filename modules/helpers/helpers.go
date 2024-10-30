@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -134,4 +135,22 @@ func GetUser(ctx *gin.Context) *UserModel.User {
 	}
 
 	return nil
+}
+
+func FormatDate(t time.Time) string {
+	return fmt.Sprintf("%d-%02d-%02dT%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute())
+}
+
+func ParseDate(date string) time.Time {
+	loc, _ := time.LoadLocation("Europe/Athens")
+
+	year, _ := strconv.Atoi(date[0:4])
+	month, _ := strconv.Atoi(date[5:7])
+	day, _ := strconv.Atoi(date[8:10])
+	hour, _ := strconv.Atoi(date[11:13])
+	minute, _ := strconv.Atoi(date[14:16])
+
+	return time.Date(year, time.Month(month), day, hour, minute, 0, 0, loc)
 }

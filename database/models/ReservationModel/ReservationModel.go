@@ -2,8 +2,10 @@ package ReservationModel
 
 import (
 	"combustiblemon/keletron-tennis-be/database"
+	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"context"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -81,6 +83,23 @@ func (r *Reservation) Save() error {
 	_, err = coll.UpdateByID(context.TODO(), r.ID, r)
 
 	return err
+}
+
+func (r *Reservation) Delete() error {
+	client, err := database.GetClient()
+
+	if err != nil {
+		return err
+	}
+
+	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
+	_, err = coll.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: r.ID}})
+
+	return err
+}
+
+func (r *Reservation) Date() time.Time {
+	return helpers.ParseDate(r.Datetime)
 }
 
 func FindOne(filter primitive.D) (*Reservation, error) {

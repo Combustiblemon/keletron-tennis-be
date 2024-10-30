@@ -11,8 +11,7 @@ import (
 
 var client *mongo.Client
 
-//revive:next-line:var-declaration
-var DatabaseName = "dev"
+const DatabaseName string = "dev"
 
 func Setup() error {
 	bsonOpts := &options.BSONOptions{
@@ -63,7 +62,6 @@ func Setup() error {
 
 func GetClient() (*mongo.Client, error) {
 	if client != nil {
-
 		return client, nil
 	}
 	err := Setup()
