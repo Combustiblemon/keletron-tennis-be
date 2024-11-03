@@ -48,7 +48,7 @@ func setupAuthorizedGroup(router *gin.Engine) {
 		reservationsGroup := authorized.Group("reservations")
 		{
 			reservationsGroup.GET("/", reservations.GET())
-			reservationsGroup.POST("/", reservations.POST())
+			reservationsGroup.POST("/", reservations.PostOne())
 			reservationsGroup.GET("/:id", reservations.GetOne())
 			reservationsGroup.PUT("/:id", reservations.PutOne())
 			reservationsGroup.DELETE("/:id", reservations.DeleteOne())

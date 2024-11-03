@@ -11,9 +11,9 @@ import (
 func GetOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		user := helpers.GetUser(ctx)
+		user, exists := helpers.GetUser(ctx)
 
-		if user != nil {
+		if exists {
 			ctx.JSON(http.StatusOK, user.Sanitize())
 			return
 		}

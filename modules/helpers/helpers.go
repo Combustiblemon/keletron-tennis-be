@@ -9,9 +9,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
+	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
@@ -118,23 +122,31 @@ func ClearAuthCookie(ctx *gin.Context) {
 func SendError(ctx *gin.Context, status int, err error) {
 	logger.Error(ctx, err.Error())
 
-	ctx.JSON(status, map[string]string{
-		"error": err.Error(),
+	if strings.Contains(err.Error(), "Error:Field validation") {
+		ctx.JSON(status, map[string]any{
+			"errors": GenerateValidationError(err),
+		})
+
+		return
+	}
+
+	ctx.JSON(status, map[string]any{
+		"errors": []string{err.Error()},
 	})
 }
 
-func GetUser(ctx *gin.Context) *UserModel.User {
+func GetUser(ctx *gin.Context) (user *UserModel.User, exists bool) {
 	userData, exists := ctx.Get("user")
 
 	if exists {
-		user, ok := userData.(UserModel.User)
+		user, ok := userData.(*UserModel.User)
 
 		if ok {
-			return &user
+			return user, exists
 		}
 	}
 
-	return nil
+	return nil, exists
 }
 
 func FormatDate(t time.Time) string {
@@ -153,4 +165,54 @@ func ParseDate(date string) time.Time {
 	minute, _ := strconv.Atoi(date[14:16])
 
 	return time.Date(year, time.Month(month), day, hour, minute, 0, 0, loc)
+}
+
+func firstToLower(s string) string {
+	r, size := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError && size <= 1 {
+		return s
+	}
+	lc := unicode.ToLower(r)
+	if r == lc {
+		return s
+	}
+	return string(lc) + s[size:]
+}
+
+type ValidationErrorInfo struct {
+	Key   string
+	Error string
+	Info  string
+}
+
+func GenerateValidationError(err error) []ValidationErrorInfo {
+	errParts := strings.Split(err.Error(), "\n")
+	regKey, _ := regexp2.Compile("(?<=Key: ')\\b\\w+\\.\\w+\\b", 0)
+	regTag, _ := regexp2.Compile("(?<=failed on the ')\\b\\w+\\b(?=' tag)", 0)
+
+	errs := []ValidationErrorInfo{}
+
+	for _, v := range errParts {
+		if strings.Contains(v, "Error:Field validation") {
+			m1, _ := regKey.FindStringMatch(v)
+			m2, _ := regTag.FindStringMatch(v)
+
+			key := firstToLower(strings.Replace(m1.String(), "ID", "_id", 1))
+
+			tag := strings.ToLower(m2.String())
+
+			errs = append(errs, ValidationErrorInfo{
+				Key:   key,
+				Error: tag,
+				Info:  "",
+			})
+		}
+	}
+
+	return errs
+}
+
+func ObjectIDFromHex(hex string) (primitive.ObjectID, error) {
+	return primitive.ObjectIDFromHex(hex)
+
 }

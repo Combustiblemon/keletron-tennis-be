@@ -18,7 +18,7 @@ type ReservationType interface {
 
 type ReservationSanitized struct {
 	ID       primitive.ObjectID `bson:"_id"`
-	Court    string
+	Court    primitive.ObjectID
 	Datetime string
 	Duration int
 	Type     string
@@ -26,7 +26,7 @@ type ReservationSanitized struct {
 
 type ReservationSanitizedOwner struct {
 	ID       primitive.ObjectID `bson:"_id"`
-	Court    string
+	Court    primitive.ObjectID
 	Datetime string
 	Duration int
 	Type     string
@@ -37,15 +37,15 @@ type ReservationSanitizedOwner struct {
 
 type Reservation struct {
 	ID       primitive.ObjectID `bson:"_id"`
-	Court    string
-	Datetime string
-	Duration int
-	Type     string
-	Owner    primitive.ObjectID
-	Status   string
-	Paid     bool
-	Notes    string
-	People   []string
+	Court    primitive.ObjectID `mod:"trim" validate:"required,mongodb"`
+	Datetime string             `mod:"trim" validate:"required"`
+	Duration int                ``
+	Type     string             `mod:"trim"`
+	Owner    primitive.ObjectID ``
+	Status   string             ``
+	Paid     bool               ``
+	Notes    string             `mod:"trim" validate:"max=600"`
+	People   []string           `mod:"trim" validate:"required,max=4,min=2,dive,max=30"`
 }
 
 func (r *Reservation) Sanitize() ReservationSanitized {
@@ -141,7 +141,7 @@ func Find(filter primitive.D) (*[]Reservation, error) {
 	return &results, nil
 }
 
-func Create(u Reservation) error {
+func Create(r Reservation) error {
 	client, err := database.GetClient()
 
 	if err != nil {
@@ -149,7 +149,17 @@ func Create(u Reservation) error {
 	}
 
 	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
-	_, err = coll.InsertOne(context.TODO(), u)
+	_, err = coll.InsertOne(context.TODO(), Reservation{
+		Court:    r.Court,
+		Datetime: r.Datetime,
+		Duration: r.Duration,
+		Type:     r.Type,
+		Owner:    r.Owner,
+		Status:   r.Status,
+		Paid:     false,
+		Notes:    r.Notes,
+		People:   r.People,
+	})
 
 	return err
 }

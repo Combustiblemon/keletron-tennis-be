@@ -10,6 +10,16 @@ require (
 	golang.org/x/oauth2 v0.23.0
 )
 
+require github.com/dlclark/regexp2 v1.11.4 // direct
+
+require (
+	github.com/go-playground/mold/v4 v4.5.0
+	github.com/gosimple/slug v1.13.1 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
+	github.com/segmentio/go-camelcase v0.0.0-20160726192923-7085f1e3c734 // indirect
+	github.com/segmentio/go-snakecase v1.2.0 // indirect
+)
+
 require github.com/gin-contrib/cors v1.7.2 // direct
 
 require (
@@ -23,7 +33,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.20.0 // indirect
+	github.com/go-playground/validator/v10 v10.22.1
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.6.0 // direct
