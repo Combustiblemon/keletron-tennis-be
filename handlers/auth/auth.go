@@ -49,7 +49,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		email, ok := data["Email"].(string)
+		email, ok := data["email"].(string)
 
 		if !ok {
 			errorHandler.SendError(ctx, http.StatusBadRequest, errors.New("email required"))
@@ -63,7 +63,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		password, ok := data["Password"].(string)
+		password, ok := data["password"].(string)
 
 		if !ok {
 			errorHandler.SendError(ctx, http.StatusBadRequest, errors.New("password required"))
@@ -92,7 +92,6 @@ func Login() gin.HandlerFunc {
 
 		helpers.SetAuthCookie(ctx, helpers.Condition(user.Session == "", newSession.String(), user.Session))
 		ctx.JSON(http.StatusOK, user.Sanitize())
-
 	}
 }
 
@@ -114,7 +113,7 @@ func Register() gin.HandlerFunc {
 			return
 		}
 
-		email, ok := data["Email"].(string)
+		email, ok := data["email"].(string)
 
 		if !ok {
 			errorHandler.SendError(ctx, http.StatusBadRequest, errors.New("email required"))
@@ -128,7 +127,7 @@ func Register() gin.HandlerFunc {
 			return
 		}
 
-		password, ok := data["Password"].(string)
+		password, ok := data["password"].(string)
 
 		if !ok {
 			errorHandler.SendError(ctx, http.StatusBadRequest, errors.New("password required"))
@@ -139,7 +138,7 @@ func Register() gin.HandlerFunc {
 			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("password too short"))
 		}
 
-		name, ok := data["Name"].(string)
+		name, ok := data["name"].(string)
 
 		if !ok {
 			errorHandler.SendError(ctx, http.StatusBadRequest, errors.New("name required"))
