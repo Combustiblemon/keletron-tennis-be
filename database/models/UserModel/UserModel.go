@@ -3,6 +3,7 @@ package UserModel
 import (
 	"combustiblemon/keletron-tennis-be/database"
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -101,6 +102,10 @@ func Create(u User) error {
 	if err != nil {
 		return err
 	}
+
+	id := primitive.NewObjectIDFromTimestamp(time.Now())
+
+	u.ID = id
 
 	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
 	_, err = coll.InsertOne(context.TODO(), u)

@@ -212,11 +212,11 @@ func Find(filter primitive.D) (*[]Reservation, error) {
 	return &results, nil
 }
 
-func Create(r *Reservation) (*Reservation, error) {
+func Create(r *Reservation) error {
 	client, err := database.GetClient()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	id := primitive.NewObjectIDFromTimestamp(time.Now())
@@ -237,7 +237,7 @@ func Create(r *Reservation) (*Reservation, error) {
 		People:   r.People,
 	})
 
-	return r, err
+	return err
 }
 
 func DeleteOne(id string) error {

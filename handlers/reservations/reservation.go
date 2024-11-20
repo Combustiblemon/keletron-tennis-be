@@ -316,13 +316,13 @@ func PostOne() gin.HandlerFunc {
 			return
 		}
 
-		rNew, err := ReservationModel.Create(&r)
+		err = ReservationModel.Create(&r)
 
 		if err != nil {
 			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
-		ctx.JSON(http.StatusCreated, rNew)
+		ctx.JSON(http.StatusCreated, r)
 	}
 }
