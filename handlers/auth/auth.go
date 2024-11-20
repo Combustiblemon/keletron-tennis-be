@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -72,7 +73,11 @@ func Login() gin.HandlerFunc {
 		user, err := UserModel.FindOne(bson.D{{Key: "email", Value: email}})
 
 		if err != nil {
-			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				errorHandler.SendError(ctx, http.StatusNotFound, fmt.Errorf("no user found"))
+			} else {
+				errorHandler.SendError(ctx, http.StatusInternalServerError, err)
+			}
 			return
 		}
 
@@ -147,7 +152,7 @@ func Register() gin.HandlerFunc {
 
 		usr, err := UserModel.FindOne(bson.D{{Key: "email", Value: strings.ToLower(strings.TrimSpace(email))}})
 
-		if usr != nil {
+		if usr != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("email exists"))
 			return
 		}
