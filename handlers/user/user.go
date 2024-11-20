@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		user, exists := helpers.GetUser(ctx)
 
 		if exists {
@@ -28,7 +28,6 @@ func GetOne() gin.HandlerFunc {
 
 func PutOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		user, exists := helpers.GetUser(ctx)
 
 		if exists {
@@ -48,24 +47,45 @@ func PutOne() gin.HandlerFunc {
 				return
 			}
 
-			if data["FCMToken"] == nil && data["name"] == nil {
+			if data["FCMToken"] == nil && data["Name"] == nil {
 				errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no data received"))
 				return
 			}
 
-			name := data["FCMToken"]
+			name := data["Name"]
 
 			if name != nil {
-				if nameStr, ok := name.(string); ok {
-					user.Name = nameStr
-				} else {
+				nameStr, ok := name.(string)
+				if !ok {
 					errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("invalid type for name"))
 					return
 				}
+
+				user.Name = nameStr
 			}
 
-			user.Save()
+			newFCMToken := data["FCMToken"]
 
+			if newFCMToken != nil {
+				newFCMToken, ok := name.(string)
+				if !ok {
+					errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("invalid type for FCMToken"))
+					return
+				}
+
+				if !slices.Contains(user.FCMTokens, newFCMToken) {
+					user.FCMTokens = append(user.FCMTokens, newFCMToken)
+				}
+			}
+
+			err = user.Save()
+
+			if err != nil {
+				errorHandler.SendError(ctx, http.StatusInternalServerError, err)
+				return
+			}
+
+			ctx.Status(http.StatusOK)
 			return
 		}
 

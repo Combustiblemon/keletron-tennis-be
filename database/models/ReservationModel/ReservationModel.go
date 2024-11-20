@@ -253,6 +253,15 @@ func DeleteOne(id string) error {
 	return err
 }
 
-func DeleteMany() error {
-	return fmt.Errorf("Not implemented")
+func DeleteMany(ids []string) error {
+	client, err := database.GetClient()
+
+	if err != nil {
+		return err
+	}
+
+	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
+	_, err = coll.DeleteMany(context.TODO(), bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}})
+
+	return err
 }

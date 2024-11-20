@@ -36,9 +36,3 @@ func GetMany() gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, ret)
 	}
 }
-
-func DeleteMany() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-
-	}
-}

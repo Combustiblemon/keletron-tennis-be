@@ -12,7 +12,7 @@ import (
 
 func GetOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_id := ctx.Query(("id"))
+		_id := ctx.Param("id")
 
 		if _id == "" {
 			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))

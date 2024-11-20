@@ -14,6 +14,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/mold/v4/modifiers"
@@ -24,7 +25,7 @@ import (
 
 func GetOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_id := ctx.Query(("id"))
+		_id := ctx.Param("id")
 
 		if _id == "" {
 			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))
@@ -50,10 +51,15 @@ func GetOne() gin.HandlerFunc {
 
 func DeleteOne() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		_id := ctx.Query(("id"))
+		_id := ctx.Param("id")
 
 		if _id == "" {
 			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))
+			return
+		}
+
+		if len(strings.Split(_id, ",")) > 1 {
+			DeleteMany(ctx)
 			return
 		}
 
@@ -77,6 +83,36 @@ func DeleteOne() gin.HandlerFunc {
 			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 		}
 	}
+}
+
+func DeleteMany(ctx *gin.Context) {
+	user, exists := helpers.GetUser(ctx)
+
+	if !exists {
+		errorHandler.SendError(ctx, http.StatusInternalServerError, fmt.Errorf("no user found"))
+		return
+	}
+
+	ids := strings.Split(ctx.Param("id"), ",")
+
+	reservations, err := ReservationModel.Find(bson.D{
+		{Key: "owner", Value: user.ID},
+		{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}},
+	})
+
+	if err != nil {
+		errorHandler.SendError(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	for _, r := range *reservations {
+		if r.Owner.String() != user.ID.String() {
+			errorHandler.SendError(ctx, http.StatusForbidden, fmt.Errorf(""))
+			return
+		}
+	}
+
+	ctx.Status(http.StatusOK)
 }
 
 var (
