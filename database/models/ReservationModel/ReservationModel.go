@@ -4,6 +4,7 @@ import (
 	"combustiblemon/keletron-tennis-be/database"
 	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -36,16 +37,29 @@ type ReservationSanitizedOwner struct {
 }
 
 type Reservation struct {
-	ID       primitive.ObjectID `bson:"_id"`
-	Court    primitive.ObjectID `mod:"trim" validate:"required,mongodb"`
-	Datetime string             `mod:"trim" validate:"required"`
-	Duration int                ``
-	Type     string             `mod:"trim"`
-	Owner    primitive.ObjectID ``
-	Status   string             ``
-	Paid     bool               ``
-	Notes    string             `mod:"trim" validate:"max=600"`
-	People   []string           `mod:"trim" validate:"required,max=4,min=2,dive,max=30"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Court    primitive.ObjectID `bson:"court,omitempty" mod:"trim" validate:"required"`
+	Datetime string             `bson:"datetime,omitempty" mod:"trim" validate:"required"`
+	Duration int                `bson:"duration,omitempty"`
+	Type     string             `bson:"type,omitempty" mod:"trim"`
+	Owner    primitive.ObjectID `bson:"owner,omitempty"`
+	Status   string             `bson:"status,omitempty"`
+	Paid     bool               `bson:"paid,omitempty"`
+	Notes    string             `bson:"notes,omitempty" mod:"trim" validate:"max=600"`
+	People   []string           `bson:"people,omitempty" mod:"trim" validate:"required,max=4,min=2,dive,max=30"`
+}
+
+type ReservationPartial struct {
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Court    primitive.ObjectID `bson:"court,omitempty" mod:"trim"`
+	Datetime string             `bson:"datetime,omitempty" mod:"trim"`
+	Duration int                `bson:"duration,omitempty" `
+	Type     string             `bson:"type,omitempty" mod:"trim"`
+	Owner    primitive.ObjectID `bson:"owner,omitempty"`
+	Status   string             `bson:"status,omitempty"`
+	Paid     bool               `bson:"paid,omitempty" `
+	Notes    string             `bson:"notes,omitempty" mod:"trim" validate:"max=600"`
+	People   []string           `bson:"people,omitempty" mod:"trim" validate:"max=4,min=2,dive,max=30"`
 }
 
 func (r *Reservation) Sanitize() ReservationSanitized {
@@ -70,9 +84,54 @@ func (r *Reservation) SanitizeOwner() ReservationSanitizedOwner {
 	}
 }
 
+func (r *Reservation) UnmarshalJSON(data []byte) error {
+	// Define a temporary struct with ID as string
+	type Alias Reservation
+	aux := &struct {
+		ID    string `json:"_id"`
+		Court string
+		Owner string
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	// Unmarshal into the temporary struct
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Convert ID from string to ObjectID
+	if aux.ID != "" {
+		objectID, err := primitive.ObjectIDFromHex(aux.ID)
+		if err != nil {
+			return fmt.Errorf("ID is an invalid ObjectID: %w", err)
+		}
+		r.ID = objectID
+	}
+
+	if aux.Court != "" {
+		objectID, err := primitive.ObjectIDFromHex(aux.Court)
+		if err != nil {
+			return fmt.Errorf("Court is an invalid ObjectID: %w", err)
+		}
+		r.Court = objectID
+	}
+
+	if aux.Owner != "" {
+		objectID, err := primitive.ObjectIDFromHex(aux.Owner)
+		if err != nil {
+			return fmt.Errorf("Owner is an invalid ObjectID: %w", err)
+		}
+		r.Owner = objectID
+	}
+
+	return nil
+}
+
 const COLLECTION string = "reservations"
 
-func (r *Reservation) Save() error {
+func (r *Reservation) Save(new *Reservation) error {
 	client, err := database.GetClient()
 
 	if err != nil {
@@ -80,7 +139,19 @@ func (r *Reservation) Save() error {
 	}
 
 	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
-	_, err = coll.UpdateByID(context.TODO(), r.ID, r)
+
+	if new != nil {
+		_, err = coll.UpdateByID(context.TODO(), r.ID, Reservation{
+			Court:    helpers.Condition(new.Court.IsZero(), r.Court, new.Court),
+			Datetime: helpers.Condition(new.Datetime == "", r.Datetime, new.Datetime),
+			Duration: helpers.Condition(new.Duration > 0, r.Duration, new.Duration),
+			Type:     helpers.Condition(new.Type == "", r.Type, new.Type),
+			Owner:    helpers.Condition(new.Owner.IsZero(), r.Owner, new.Owner),
+			Status:   helpers.Condition(new.Status == "", r.Status, new.Status),
+			Notes:    helpers.Condition(new.Notes == "", r.Notes, new.Notes),
+			People:   helpers.Condition(len(new.People) == 0, r.People, new.People),
+		})
+	}
 
 	return err
 }
@@ -141,15 +212,20 @@ func Find(filter primitive.D) (*[]Reservation, error) {
 	return &results, nil
 }
 
-func Create(r Reservation) error {
+func Create(r *Reservation) (*Reservation, error) {
 	client, err := database.GetClient()
 
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	id := primitive.NewObjectIDFromTimestamp(time.Now())
+
+	r.ID = id
 
 	coll := client.Database(database.DatabaseName).Collection(COLLECTION)
 	_, err = coll.InsertOne(context.TODO(), Reservation{
+		ID:       id,
 		Court:    r.Court,
 		Datetime: r.Datetime,
 		Duration: r.Duration,
@@ -161,7 +237,7 @@ func Create(r Reservation) error {
 		People:   r.People,
 	})
 
-	return err
+	return r, err
 }
 
 func DeleteOne(id string) error {

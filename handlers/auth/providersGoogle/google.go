@@ -2,6 +2,7 @@ package providersGoogle
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/UserModel"
+	"combustiblemon/keletron-tennis-be/modules/errorHandler"
 	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"encoding/json"
 	"fmt"
@@ -61,7 +62,7 @@ func Start() gin.HandlerFunc {
 		redirectURL, err := getLoginURL(conf, oauthStateStringGl)
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 		}
 
 		ctx.JSON(http.StatusOK, map[string]string{
@@ -124,21 +125,21 @@ func Callback() gin.HandlerFunc {
 		data, err := CallBackFromGoogle(ctx.Request)
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
 		session, err := uuid.NewV7()
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
 		usr, err := UserModel.FindOne(bson.D{{Key: "email", Value: data.Email}})
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -155,7 +156,7 @@ func Callback() gin.HandlerFunc {
 		token, err := helpers.CreateToken(*usr)
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 
 			return
 		}

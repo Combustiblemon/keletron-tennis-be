@@ -2,7 +2,7 @@ package announcements
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/AnnouncementModel"
-	"combustiblemon/keletron-tennis-be/modules/helpers"
+	"combustiblemon/keletron-tennis-be/modules/errorHandler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ func Get() gin.HandlerFunc {
 		announcements, err := AnnouncementModel.Find(bson.D{{Key: "visible", Value: true}})
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 
 			return
 		}

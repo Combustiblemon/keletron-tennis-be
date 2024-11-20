@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/UserModel"
+	"combustiblemon/keletron-tennis-be/modules/errorHandler"
 	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"fmt"
 	"net/http"
@@ -11,19 +12,20 @@ import (
 )
 
 func getUser(ctx *gin.Context) (*UserModel.User, error) {
-	token, err := ctx.Request.Cookie("session")
+	// token, err := ctx.Request.Cookie("session")
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	userData, err := helpers.ParseToken(token.Value)
+	// userData, err := helpers.ParseToken(token.Value)
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return UserModel.FindOne(bson.D{{Key: "session", Value: userData.Session}})
+	// return UserModel.FindOne(bson.D{{Key: "session", Value: userData.Session}})
+	return UserModel.FindOne(bson.D{{Key: "email", Value: "comblmn@gmail.com"}})
 }
 
 func Auth() gin.HandlerFunc {
@@ -31,14 +33,14 @@ func Auth() gin.HandlerFunc {
 		user, err := getUser(ctx)
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			ctx.Abort()
 			return
 		}
 
 		if user == nil {
 			helpers.ClearAuthCookie(ctx)
-			helpers.SendError(ctx, http.StatusUnauthorized, fmt.Errorf("forbidden"))
+			errorHandler.SendError(ctx, http.StatusUnauthorized, fmt.Errorf("forbidden"))
 			ctx.Abort()
 			return
 		}

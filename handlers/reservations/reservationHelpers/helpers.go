@@ -1,4 +1,4 @@
-package helpers
+package reservationHelpers
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/CourtModel"
@@ -19,10 +19,28 @@ func AddMinutesToTime(t string, minutes int) string {
 	hour, _ := strconv.Atoi(strings.Split(t, ":")[0])
 	minute, _ := strconv.Atoi(strings.Split(t, ":")[1])
 
+	//nolint:revive
 	tm := time.Date(1970, time.Month(1), 1, hour, minute, 0, 0, loc)
 	tm = tm.Add(time.Minute * time.Duration(minutes))
 
 	return fmt.Sprintf("%02d:%02d", tm.Hour(), tm.Minute())
+}
+
+func IsTimeValid(datetime string) bool {
+	_, err := time.Parse("2006-01-02", strings.Split(datetime, "T")[0])
+
+	if err != nil {
+		return false
+	}
+
+	t := strings.Split(datetime, "T")[1]
+
+	//nolint:revive
+	if (t[:2] < "01" && t[:2] > "23") || (t[3:5] < "01" && t[3:5] > "59") {
+		return false
+	}
+
+	return true
 }
 
 type OverlappingTimeData struct {

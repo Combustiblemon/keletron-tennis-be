@@ -2,7 +2,7 @@ package courts
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/CourtModel"
-	"combustiblemon/keletron-tennis-be/modules/helpers"
+	"combustiblemon/keletron-tennis-be/modules/errorHandler"
 	"fmt"
 	"net/http"
 
@@ -15,14 +15,14 @@ func GetOne() gin.HandlerFunc {
 		_id := ctx.Query(("id"))
 
 		if _id == "" {
-			helpers.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))
+			errorHandler.SendError(ctx, http.StatusBadRequest, fmt.Errorf("no id provided"))
 			return
 		}
 
 		court, err := CourtModel.FindOne(bson.D{{Key: "_id", Value: _id}})
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 

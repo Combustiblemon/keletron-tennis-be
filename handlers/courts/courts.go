@@ -2,7 +2,7 @@ package courts
 
 import (
 	"combustiblemon/keletron-tennis-be/database/models/CourtModel"
-	"combustiblemon/keletron-tennis-be/modules/helpers"
+	"combustiblemon/keletron-tennis-be/modules/errorHandler"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,7 @@ func GetMany() gin.HandlerFunc {
 		court, err := CourtModel.FindOne(bson.D{})
 
 		if err != nil {
-			helpers.SendError(ctx, http.StatusInternalServerError, err)
+			errorHandler.SendError(ctx, http.StatusInternalServerError, err)
 			return
 		}
 
