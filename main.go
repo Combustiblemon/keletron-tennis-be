@@ -11,7 +11,9 @@ import (
 	"combustiblemon/keletron-tennis-be/handlers/reservations"
 	"combustiblemon/keletron-tennis-be/handlers/user"
 	"combustiblemon/keletron-tennis-be/middleware"
+	"combustiblemon/keletron-tennis-be/modules/helpers"
 	"log"
+	"os"
 	"time"
 
 	"fmt"
@@ -21,7 +23,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const SERVER_PORT = "2000"
+var serverPort = helpers.Condition(os.Getenv("PORT") == "", "2000", os.Getenv("PORT"))
 
 func setupAuthGroup(router *gin.Engine) {
 	authGroup := router.Group("auth")
@@ -147,7 +149,7 @@ func main() {
 
 	router.Use(middleware.Error())
 
-	err = router.Run(fmt.Sprintf("localhost:%v", SERVER_PORT))
+	err = router.Run(fmt.Sprintf("localhost:%v", serverPort))
 
 	if err != nil {
 		log.Fatal("Error bringing server online", err)
