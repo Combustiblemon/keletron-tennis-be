@@ -149,7 +149,7 @@ func main() {
 
 	router.Use(middleware.Error())
 
-	err = router.Run(fmt.Sprintf("localhost:%v", serverPort))
+	err = router.Run(fmt.Sprintf("%v:%v", helpers.Condition(os.Getenv("IP") == "", "localhost", os.Getenv("IP")), serverPort))
 
 	if err != nil {
 		log.Fatal("Error bringing server online", err)
